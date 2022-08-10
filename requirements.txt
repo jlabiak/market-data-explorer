@@ -1,6 +1,5 @@
 dash==2.5.1
 dash_bootstrap_components==1.2.0
-dask==2.30.0
 Flask_Caching==2.0.0
 numpy==1.19.2
 pandas==1.1.3

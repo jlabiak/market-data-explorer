@@ -5,7 +5,6 @@ import config
 from datetime import datetime as dt
 import time
 import sys
-import dask.dataframe as dd
 
 from app import cache, TIMEOUT
 
