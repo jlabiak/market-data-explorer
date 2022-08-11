@@ -33,7 +33,7 @@ def get_russell_comps():
 	russell_tickers = None
 	print('Getting Russell 2000 index components...')
 	try:
-		reader = PdfReader('../data/ru2000_membershiplist_20220624_0.pdf')
+		reader = PdfReader('data/ru2000_membershiplist_20220624_0.pdf')
 		num_pages = len(reader.pages)
 		russell_tickers = []
 		ignore_list = [
