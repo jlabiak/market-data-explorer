@@ -3,7 +3,7 @@ import yfinance as yf
 import config
 from data import create_connection
 import get_index_components
-
+    
 # Get components of S&P 500, Nasdaq 100, and Russell 2000
 def get_tickers():
     if config.PATH_TO_INDEX_COMPONENTS:
@@ -44,7 +44,7 @@ def write_to_db(data, db_url, if_exists):
         )
         try:
             print('Writing data to {}...'.format(db_url))
-            data.to_sql('prices', con=conn, chunksize=1000000, if_exists=if_exists)
+            data.to_sql('prices', con=conn, chunksize=100000, if_exists=if_exists, method='multi')
             print('Wrote {} records to {}.'.format(len(data), db_url))
         except Exception as e:
             print('Failed writing data to {}:{}'.format(db_url, e))

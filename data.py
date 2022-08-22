@@ -5,40 +5,87 @@ import config
 from datetime import datetime as dt
 import time
 import sys
+import tempfile
 
 from app import cache, TIMEOUT
+
+def read_sql_tmpfile(query, db_url, **kwargs):
+    with tempfile.TemporaryFile() as tmpfile:
+        copy_sql = "COPY ({query}) TO STDOUT WITH CSV {head}".format(
+           query=query, head="HEADER"
+        )
+        engine = create_engine(db_url)
+        conn = engine.raw_connection()
+        cur = conn.cursor()
+        cur.copy_expert(copy_sql, tmpfile)
+        conn.close()
+        tmpfile.seek(0)
+        df = pd.read_csv(tmpfile, **kwargs)
+        return df
 
 @cache.memoize(timeout=TIMEOUT)
 def get_prices():
     print('Loading price data...')
     st = time.time()
-
-    print('Querying SQL...')
-    database = config.DB_URL
-    # Create a database connection
-    conn = create_connection(database)
-    result = conn.execute('SELECT date,ticker,price FROM prices')
-    print('Returned SQL result of size {}MB'.format(sys.getsizeof(result) / 1e6))
-    sql_results=result.fetchall()
-    print('Fetched SQL result of size {}MB'.format(sys.getsizeof(sql_results) / 1e6))
-    conn.close()
-
-    print('Converting to df...')
-    df=pd.DataFrame(sql_results, columns=['date','ticker','price'])
-    df['date'] = pd.to_datetime(df['date'])
+    # chunks = pd.read_sql_table('prices', config.DB_URL, chunksize=100000)
+    # dfs = []
+    # for c in chunks:
+    #     dfs.append(c)
+    #     print('chunk size {}MB'.format(sys.getsizeof(c) / 1e6))
+    # df = pd.concat(dfs)
+    # df['date'] = pd.to_datetime(df['date'])
+    df = read_sql_tmpfile(
+        query='SELECT date,ticker,price FROM prices', 
+        db_url=config.DB_URL, 
+        index_col='date', 
+        parse_dates=True, 
+        dtype={'ticker': 'str', 'price': 'float'}, 
+        engine='pyarrow'
+    )
     print('Returned df of size {}MB'.format(sys.getsizeof(df) / 1e6))
-
     et = time.time()
-    print('Time to load price date: {}'.format(et-st))
+    print('Time to load price data: {}'.format(et-st))
 
     # Pivot dataframe
     print('Pivoting df...')
     st = time.time()
-    df = df.pivot(index='date', columns='ticker', values='price')
+    df = df.pivot(columns='ticker', values='price')
     et = time.time()
     print('Time to pivot df: {}'.format(et-st))
 
     return df
+
+# @cache.memoize(timeout=TIMEOUT)
+# def get_prices():
+#     print('Loading price data...')
+#     st = time.time()
+
+#     print('Querying SQL...')
+#     database = config.DB_URL
+#     # Create a database connection
+#     conn = create_connection(database)
+#     result = conn.execute('SELECT date,ticker,price FROM prices')
+#     print('Returned SQL result of size {}MB'.format(sys.getsizeof(result) / 1e6))
+#     sql_results=result.fetchall()
+#     print('Fetched SQL result of size {}MB'.format(sys.getsizeof(sql_results) / 1e6))
+#     conn.close()
+
+#     print('Converting to df...')
+#     df=pd.DataFrame(sql_results, columns=['date','ticker','price'])
+#     df['date'] = pd.to_datetime(df['date'])
+#     print('Returned df of size {}MB'.format(sys.getsizeof(df) / 1e6))
+
+#     et = time.time()
+#     print('Time to load price data: {}'.format(et-st))
+
+#     # Pivot dataframe
+#     print('Pivoting df...')
+#     st = time.time()
+#     df = df.pivot(index='date', columns='ticker', values='price')
+#     et = time.time()
+#     print('Time to pivot df: {}'.format(et-st))
+
+#     return df
 
 @cache.memoize(timeout=TIMEOUT)
 def get_latest_date():
@@ -135,6 +182,7 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     print('Computing correlations...')
     st = time.time()
     corrm = df.corr(method=corr_meth)
+    #corrm = pd.DataFrame(np.corrcoef(df.values, rowvar=False), columns=df.columns)
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
 

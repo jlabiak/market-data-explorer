@@ -65,7 +65,7 @@ def render_page_content(pathname):
     if pathname == '/':
         return html.Div([dcc.Markdown('''
             ### Introduction
-            This application is a project built by [John Labiak](https://jlabiak.github.io) using Plotly's Dash,
+            This application is a project built using Plotly's Dash,
             faculty.ai's Dash Bootstrap Components, Pandas, statsmodels for linear regression modeling, and custom functions. 
             Using historical Yahoo Finance data, this application allows the user to see how much of the variance of a selected index 
             can be explained by a basket of component securities and allows the user to evaluate various equity pair-trading strategies.
