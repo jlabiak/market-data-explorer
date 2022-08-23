@@ -181,7 +181,7 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     # Compute pairwise correlations
     print('Computing correlations...')
     st = time.time()
-    #corrm = df.corr(method=corr_meth)
+    corrm = df.corr(method=corr_meth)
     #corrm = pd.DataFrame(np.corrcoef(df.values, rowvar=False), columns=df.columns)
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
