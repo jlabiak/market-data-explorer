@@ -198,7 +198,8 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     print('Size of new mask: {}MB'.format(sys.getsizeof(mask) / 1e6))
     corrm = corrm.mask(~mask, 0)
     print('Size of masked corr: {}MB'.format(sys.getsizeof(corrm) / 1e6))
-    pairs = corrm.stack().nlargest(n).index
+    #pairs = corrm.stack().nlargest(n).index
+    pairs = corrm.stack().sort_values(ascending=False)[:n].index
     print('Size of pairs: {}MB'.format(sys.getsizeof(pairs) / 1e6))
 
     # Format DataFrame with results
