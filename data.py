@@ -181,18 +181,28 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     # Compute pairwise correlations
     print('Computing correlations...')
     st = time.time()
-    corrm = df.corr(method=corr_meth)
+    #corrm = df.corr(method=corr_meth)
     #corrm = pd.DataFrame(np.corrcoef(df.values, rowvar=False), columns=df.columns)
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
+    print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))
 
     # Find n largest pairwise correlations
+    # sol = (corrm.where(np.triu(np.ones(corrm.shape), k=1).astype(bool))
+    #               .stack()
+    #               .sort_values(ascending=False))
+    # print('Size of sol: {}MB'.format(sys.getsizeof(sol) / 1e6))
     mask = np.ones(corrm.shape, dtype='bool')
+    print('Size of mask: {}MB'.format(sys.getsizeof(mask) / 1e6))
     mask[np.triu_indices(len(corrm))] = False
+    print('Size of new mask: {}MB'.format(sys.getsizeof(mask) / 1e6))
     corrm = corrm.mask(~mask, 0)
+    print('Size of masked corr: {}MB'.format(sys.getsizeof(corrm) / 1e6))
     pairs = corrm.stack().nlargest(n).index
+    print('Size of pairs: {}MB'.format(sys.getsizeof(pairs) / 1e6))
 
     # Format DataFrame with results
+    print('Formatting results...')
     pairs = pd.DataFrame(pairs, columns=['pair'])
     pairs['corr'] = pairs['pair'].apply(lambda x: round(corrm.loc[x],4))
     pairs['ticker1'] = pairs['pair'].apply(lambda x: x[0])
