@@ -615,7 +615,7 @@ def run_backtest(n_clicks, trade_size, entry_thres, exit_type, exit_thres, selec
         total_pnl = pd.Series(name='pnl')
         for i in selected:
             pnl = data.get_daily_pnl(prices, pairs[i]['ticker1'], pairs[i]['ticker2'], trade_size, entry_thres, exit_type, exit_thres, start_date, end_date)
-            pnl.to_csv('../data/pnl_' + '_' + pairs[i]['ticker1'] + '_' + pairs[i]['ticker2'] + '.csv')
+            #pnl.to_csv('../data/pnl_' + '_' + pairs[i]['ticker1'] + '_' + pairs[i]['ticker2'] + '.csv')
             total_pnl = total_pnl.add(pnl, fill_value=0)
         
         total_pnl = total_pnl.fillna(0)

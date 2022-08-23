@@ -188,19 +188,11 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))
 
     # Find n largest pairwise correlations
-    # sol = (corrm.where(np.triu(np.ones(corrm.shape), k=1).astype(bool))
-    #               .stack()
-    #               .sort_values(ascending=False))
-    # print('Size of sol: {}MB'.format(sys.getsizeof(sol) / 1e6))
+    print('Finding largest pairwise correlations...')
     mask = np.ones(corrm.shape, dtype='bool')
-    print('Size of mask: {}MB'.format(sys.getsizeof(mask) / 1e6))
     mask[np.triu_indices(len(corrm))] = False
-    print('Size of new mask: {}MB'.format(sys.getsizeof(mask) / 1e6))
     corrm = corrm.mask(~mask, 0)
-    print('Size of masked corr: {}MB'.format(sys.getsizeof(corrm) / 1e6))
-    #pairs = corrm.stack().nlargest(n).index
     pairs = corrm.stack().sort_values(ascending=False)[:n].index
-    print('Size of pairs: {}MB'.format(sys.getsizeof(pairs) / 1e6))
 
     # Format DataFrame with results
     print('Formatting results...')
