@@ -70,7 +70,11 @@ tradeMenu = html.Div(
 			], 
 		),
 		html.Br(),
-		dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
+		#dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
+		html.Div(id='corr-output-container'),
+		dcc.Interval(id='waiting'),
+		html.Div(id='job-id'),
+		#html.Div(id='corr-output-container-2'),
 		html.Br(),
 		html.Div(id='backtest-container'),
 	]

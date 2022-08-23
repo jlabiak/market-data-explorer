@@ -43,6 +43,9 @@ def get_prices():
         engine='pyarrow'
     )
     print('Returned df of size {}MB'.format(sys.getsizeof(df) / 1e6))
+    print('Loaded {} observations ({}MB) from {} to {}'.format(len(df), 
+        sys.getsizeof(df) / 1e6, df.index.min().date().strftime('%Y-%m-%d'), 
+        df.index.max().date().strftime('%Y-%m-%d')))
     et = time.time()
     print('Time to load price data: {}'.format(et-st))
 
@@ -182,7 +185,6 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     print('Computing correlations...')
     st = time.time()
     corrm = df.corr(method=corr_meth)
-    #corrm = pd.DataFrame(np.corrcoef(df.values, rowvar=False), columns=df.columns)
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
     print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))

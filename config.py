@@ -5,9 +5,10 @@ import subprocess
 # Set to 'local' or 'heroku'
 RUN_ENV = 'local'
 
-START_DATE = '2000-01-01'
+START_DATE = '2010-01-01'
 PATH_TO_INDEX_COMPONENTS = 'data/index_components.csv'
-#DB_URL = 'sqlite:///./data/equity_data.db' #'postgresql://localhost/johnlabiak'
+#DB_URL = 'sqlite:///./data/equity_data.db'
+#DB_URL = 'postgresql://localhost/johnlabiak'
 
 if RUN_ENV == 'local':
 	DB_URL = os.environ['DATABASE_URL']

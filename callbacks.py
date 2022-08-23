@@ -8,12 +8,13 @@ import statsmodels.api as sm
 from datetime import datetime as dt, date
 import numpy as np
 import time
+from data import get_most_correlated
 
 # Import config
 import config
 
 # Import app
-from app import app
+from app import app, q, Job, conn
 
 # Import data
 import data 
@@ -376,47 +377,152 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
     return [fig_uni_scatter, rsquared_uni_text]
 
 @app.callback(
-    Output('corr-output-container', 'children'),
+    [
+        Output('corr-output-container', 'children'),
+        Output('job-id', 'value'),
+    ],
     [
         Input('get-pairs', 'n_clicks'),
+        Input('waiting', 'n_intervals'),
         Input('trade-date-picker', 'start_date'),
         Input('trade-date-picker', 'end_date'),
         Input('corr-selected', 'value'),
-    ]
+    ],
+    State('job-id', 'value'),
 )
-def find_pairs(n_clicks, start_date, end_date, corr_meth):
+def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
     if n_clicks:
         context = ctx.triggered[0]['prop_id'].split('.')[0]
         if context == 'get-pairs':
-            pairs = data.get_most_correlated(start_date, end_date, corr_meth)
-            pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
-            return [
-                html.B(
-                    id='pairs-table-title',
-                    children='Select pairs (rows) from the table below to include in the strategy backtest:',
-                ),
-                html.Div([
-                    dash_table.DataTable(
-                        id='pairs-table',
-                        columns=[
-                            {'name': 'Ticker 1', 'id': 'ticker1'},
-                            {'name': 'Ticker 2', 'id': 'ticker2'},
-                            {'name': 'Corr. Coeff.', 'id': 'corr'},
-                        ],
-                        data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
-                        style_cell={'textAlign': 'center'},
-                        style_data={ 'border': '1px solid black'},
-                        style_header={ 'border': '1px solid black'},                    
-                        row_selectable='multi',
-                        row_deletable=True,
-                        selected_rows=[],
-                        page_current= 0,
-                        page_size= 10,
-                    )],
-                    style={'margin-top':'20px'}
-                )
-            ]
-    return []
+            #pairs = data.get_most_correlated(start_date, end_date, corr_meth)
+            job = q.enqueue_call(func=get_most_correlated, args=(start_date, end_date, corr_meth,))
+            print('Queued job {}'.format(job.get_id()))
+            #pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
+            return [dbc.Spinner(spinnerClassName='spinner'), job.get_id()]
+            # return [
+            #     html.B(
+            #         id='pairs-table-title',
+            #         children='Select pairs (rows) from the table below to include in the strategy backtest:',
+            #     ),
+            #     html.Div([
+            #         dash_table.DataTable(
+            #             id='pairs-table',
+            #             columns=[
+            #                 {'name': 'Ticker 1', 'id': 'ticker1'},
+            #                 {'name': 'Ticker 2', 'id': 'ticker2'},
+            #                 {'name': 'Corr. Coeff.', 'id': 'corr'},
+            #             ],
+            #             data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
+            #             style_cell={'textAlign': 'center'},
+            #             style_data={ 'border': '1px solid black'},
+            #             style_header={ 'border': '1px solid black'},                    
+            #             row_selectable='multi',
+            #             row_deletable=True,
+            #             selected_rows=[],
+            #             page_current= 0,
+            #             page_size= 10,
+            #         )],
+            #         style={'margin-top':'20px'}
+            #     )
+            # ]
+        elif context == 'waiting':
+            job = Job.fetch(job_id, connection=conn)
+            if job.is_finished:
+                pairs = job.result
+                pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
+                return [[
+                    html.B(
+                        id='pairs-table-title',
+                        children='Select pairs (rows) from the table below to include in the strategy backtest:',
+                    ),
+                    html.Div([
+                        dash_table.DataTable(
+                            id='pairs-table',
+                            columns=[
+                                {'name': 'Ticker 1', 'id': 'ticker1'},
+                                {'name': 'Ticker 2', 'id': 'ticker2'},
+                                {'name': 'Corr. Coeff.', 'id': 'corr'},
+                            ],
+                            data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
+                            style_cell={'textAlign': 'center'},
+                            style_data={ 'border': '1px solid black'},
+                            style_header={ 'border': '1px solid black'},                    
+                            row_selectable='multi',
+                            row_deletable=True,
+                            selected_rows=[],
+                            page_current= 0,
+                            page_size= 10,
+                        )],
+                        style={'margin-top':'20px'}
+                    ),
+                ],'']
+            else:
+                return [dbc.Spinner(spinnerClassName='spinner'), job.get_id()]
+    return [[],'']
+
+# @app.callback(
+#     Output('corr-output-container-2', 'children'),
+#     Input('waiting', 'n_intervals'),
+#     State('job-id','value'),
+# )
+# def get_corr_results(n_intervals, job_id):
+#     job = Job.fetch(job_id, connection=conn)
+
+#     if job.is_finished:
+#         pairs = job.result
+#         pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
+#         return [
+#             html.B(
+#                 id='pairs-table-title',
+#                 children='Select pairs (rows) from the table below to include in the strategy backtest:',
+#             ),
+#             html.Div([
+#                 dash_table.DataTable(
+#                     id='pairs-table',
+#                     columns=[
+#                         {'name': 'Ticker 1', 'id': 'ticker1'},
+#                         {'name': 'Ticker 2', 'id': 'ticker2'},
+#                         {'name': 'Corr. Coeff.', 'id': 'corr'},
+#                     ],
+#                     data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
+#                     style_cell={'textAlign': 'center'},
+#                     style_data={ 'border': '1px solid black'},
+#                     style_header={ 'border': '1px solid black'},                    
+#                     row_selectable='multi',
+#                     row_deletable=True,
+#                     selected_rows=[],
+#                     page_current= 0,
+#                     page_size= 10,
+#                 )],
+#                 style={'margin-top':'20px'}
+#             )
+#         ]
+#     else:
+#         return 'still waiting'
+
+@app.callback(
+    Output('waiting', 'disabled'),
+    Input('job-id', 'value'),
+)
+def disable_interval(job_id):
+    if job_id == '':
+        return True
+    return False
+
+# @app.callback(
+#     Output('waiting', 'disabled'),
+#     Input('corr-output-container', 'children'),
+#     Input('trade-date-picker', 'start_date'),
+#     Input('trade-date-picker', 'end_date'),
+#     Input('corr-selected', 'value'),
+# )
+# def disable_interval(children, start, end, value):
+#     context = ctx.triggered[0]['prop_id'].split('.')[0]
+#     if context in ['trade-date-picker', 'corr-selected']:
+#         return True
+#     if children:
+#         return True
+#     return False
 
 @app.callback(
     Output('get-pairs', 'disabled'),

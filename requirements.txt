@@ -11,3 +11,4 @@ statsmodels==0.13.2
 yfinance==0.1.72
 pyarrow==9.0.0
 gunicorn==20.1.0
+rq==1.11.0
