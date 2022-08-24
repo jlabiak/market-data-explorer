@@ -71,7 +71,20 @@ tradeMenu = html.Div(
 		),
 		html.Br(),
 		#dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
-		html.Div(id='corr-output-container'),
+		html.Div(
+			id='corr-output-container', 
+			children=[
+                html.B(
+                    id='pairs-table-title'
+                ),
+                html.Div([
+                    dash_table.DataTable(
+                        id='pairs-table',
+                ),
+            	]),
+            ],
+			hidden=True,
+		),
 		dcc.Interval(id='waiting'),
 		html.Div(id='job-id'),
 		#html.Div(id='corr-output-container-2'),

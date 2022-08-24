@@ -379,6 +379,7 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
 @app.callback(
     [
         Output('corr-output-container', 'children'),
+        Output('corr-output-container', 'hidden'),
         Output('job-id', 'value'),
     ],
     [
@@ -398,33 +399,7 @@ def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
             job = q.enqueue_call(func=get_most_correlated, args=(start_date, end_date, corr_meth,))
             print('Queued job {}'.format(job.get_id()))
             #pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
-            return [dbc.Spinner(spinnerClassName='spinner'), job.get_id()]
-            # return [
-            #     html.B(
-            #         id='pairs-table-title',
-            #         children='Select pairs (rows) from the table below to include in the strategy backtest:',
-            #     ),
-            #     html.Div([
-            #         dash_table.DataTable(
-            #             id='pairs-table',
-            #             columns=[
-            #                 {'name': 'Ticker 1', 'id': 'ticker1'},
-            #                 {'name': 'Ticker 2', 'id': 'ticker2'},
-            #                 {'name': 'Corr. Coeff.', 'id': 'corr'},
-            #             ],
-            #             data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
-            #             style_cell={'textAlign': 'center'},
-            #             style_data={ 'border': '1px solid black'},
-            #             style_header={ 'border': '1px solid black'},                    
-            #             row_selectable='multi',
-            #             row_deletable=True,
-            #             selected_rows=[],
-            #             page_current= 0,
-            #             page_size= 10,
-            #         )],
-            #         style={'margin-top':'20px'}
-            #     )
-            # ]
+            return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
         elif context == 'waiting':
             job = Job.fetch(job_id, connection=conn)
             if job.is_finished:
@@ -455,50 +430,10 @@ def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
                         )],
                         style={'margin-top':'20px'}
                     ),
-                ],'']
+                ], False, '']
             else:
-                return [dbc.Spinner(spinnerClassName='spinner'), job.get_id()]
-    return [[],'']
-
-# @app.callback(
-#     Output('corr-output-container-2', 'children'),
-#     Input('waiting', 'n_intervals'),
-#     State('job-id','value'),
-# )
-# def get_corr_results(n_intervals, job_id):
-#     job = Job.fetch(job_id, connection=conn)
-
-#     if job.is_finished:
-#         pairs = job.result
-#         pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
-#         return [
-#             html.B(
-#                 id='pairs-table-title',
-#                 children='Select pairs (rows) from the table below to include in the strategy backtest:',
-#             ),
-#             html.Div([
-#                 dash_table.DataTable(
-#                     id='pairs-table',
-#                     columns=[
-#                         {'name': 'Ticker 1', 'id': 'ticker1'},
-#                         {'name': 'Ticker 2', 'id': 'ticker2'},
-#                         {'name': 'Corr. Coeff.', 'id': 'corr'},
-#                     ],
-#                     data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
-#                     style_cell={'textAlign': 'center'},
-#                     style_data={ 'border': '1px solid black'},
-#                     style_header={ 'border': '1px solid black'},                    
-#                     row_selectable='multi',
-#                     row_deletable=True,
-#                     selected_rows=[],
-#                     page_current= 0,
-#                     page_size= 10,
-#                 )],
-#                 style={'margin-top':'20px'}
-#             )
-#         ]
-#     else:
-#         return 'still waiting'
+                return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
+    return [[],False, '']
 
 @app.callback(
     Output('waiting', 'disabled'),
@@ -508,21 +443,6 @@ def disable_interval(job_id):
     if job_id == '':
         return True
     return False
-
-# @app.callback(
-#     Output('waiting', 'disabled'),
-#     Input('corr-output-container', 'children'),
-#     Input('trade-date-picker', 'start_date'),
-#     Input('trade-date-picker', 'end_date'),
-#     Input('corr-selected', 'value'),
-# )
-# def disable_interval(children, start, end, value):
-#     context = ctx.triggered[0]['prop_id'].split('.')[0]
-#     if context in ['trade-date-picker', 'corr-selected']:
-#         return True
-#     if children:
-#         return True
-#     return False
 
 @app.callback(
     Output('get-pairs', 'disabled'),
@@ -545,10 +465,16 @@ def disable_button_on_click(n_clicks, start, end, corr_meth):
 
 @app.callback(
     Output('backtest-container', 'children'),
-    Input('pairs-table', 'selected_rows'),
+    [
+        Input('pairs-table', 'selected_rows'),
+        Input('trade-date-picker', 'start_date'),
+        Input('trade-date-picker', 'end_date'),
+        Input('corr-selected', 'value'),
+    ],
 )
-def get_backtest_params(pairs):
-    if len(pairs) == 0:
+def get_backtest_params(pairs, start, end, corr_meth):
+    context = ctx.triggered[0]['prop_id'].split('.')[0]
+    if context != 'pairs-table' or len(pairs) == 0:
         return []
     else:
         return html.Div(
