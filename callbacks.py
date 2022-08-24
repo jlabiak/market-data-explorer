@@ -400,6 +400,32 @@ def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
             print('Queued job {}'.format(job.get_id()))
             #pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
             return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
+            # return [
+            #     html.B(
+            #         id='pairs-table-title',
+            #         children='Select pairs (rows) from the table below to include in the strategy backtest:',
+            #     ),
+            #     html.Div([
+            #         dash_table.DataTable(
+            #             id='pairs-table',
+            #             columns=[
+            #                 {'name': 'Ticker 1', 'id': 'ticker1'},
+            #                 {'name': 'Ticker 2', 'id': 'ticker2'},
+            #                 {'name': 'Corr. Coeff.', 'id': 'corr'},
+            #             ],
+            #             data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
+            #             style_cell={'textAlign': 'center'},
+            #             style_data={ 'border': '1px solid black'},
+            #             style_header={ 'border': '1px solid black'},                    
+            #             row_selectable='multi',
+            #             row_deletable=True,
+            #             selected_rows=[],
+            #             page_current= 0,
+            #             page_size= 10,
+            #         )],
+            #         style={'margin-top':'20px'}
+            #     )
+            # ]
         elif context == 'waiting':
             job = Job.fetch(job_id, connection=conn)
             if job.is_finished:
