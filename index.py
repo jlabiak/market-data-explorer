@@ -8,13 +8,13 @@ from layouts import regMenu, tradeMenu
 import callbacks
 
 # Import app
-from app import app
+from app import app, q, Job, conn
 # Import server for deployment
 from app import server
 
-from data import get_prices
+# from data import get_prices
 
-_ = get_prices()
+# _ = get_prices()
 
 # Define sidebar style
 SIDEBAR_STYLE = {
