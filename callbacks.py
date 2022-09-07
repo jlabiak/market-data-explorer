@@ -16,7 +16,7 @@ from sklearn import linear_model
 import config
 
 # Import app
-from app import app, q, Job, conn
+from app import app#, q, Job, conn
 
 # Import data
 import data 
@@ -89,10 +89,7 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
     if context == 'analyse-tickers':
         # Get data for index and selected components
         index_ticker = data.get_index_ticker('{0}'.format(index_name))
-        #df = data.get_prices()
-        job = q.enqueue_call(func=get_prices)
-        print('Queued job {}'.format(job.get_id()))
-        return [[],[]]
+        df = data.get_prices()
 
         # Filter on tickers
         print('Filtering for tickers...')
