@@ -12,6 +12,10 @@ from app import app
 # Import server for deployment
 from app import server
 
+from data import get_prices
+
+_ = get_prices()
+
 # Define sidebar style
 SIDEBAR_STYLE = {
     'position': 'fixed',
