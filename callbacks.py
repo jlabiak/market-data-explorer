@@ -1,6 +1,7 @@
 from dash import html, dcc, Input, Output, State, callback_context as ctx, dash_table
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import dash_daq as daq
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,6 +10,7 @@ from datetime import datetime as dt, date
 import numpy as np
 import time
 from data import get_most_correlated
+from sklearn import linear_model
 
 # Import config
 import config
@@ -47,7 +49,7 @@ def get_index_components(n_clicks, value):
                 ], 
             ),
             html.Br(),
-            html.Button('Launch {0} analysis!'.format(value), id='analyse-tickers'),
+            html.Button('Launch {0} analysis'.format(value), id='analyse-tickers'),
         ]
         return children
     return []
@@ -97,10 +99,11 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
         print('time to filter for tickers: {}'.format(et-st))
 
         # Filter on selected dates
+        print('Filtering for selected dates...')
         st = time.time()
         df = df[(df.index >= dt.strptime(start_date, '%Y-%m-%d')) & (df.index <= dt.strptime(end_date, '%Y-%m-%d'))]
         et = time.time()
-        print('time to filter df: {}'.format(et-st))
+        print('Time to filter for selected dates: {}'.format(et-st))
 
         # Compute returns
         df = (df / df.shift(1)) - 1
@@ -266,6 +269,44 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
     		            label='Univariate regression',
     		            children=fig_scatter,
     		        ),
+                    dbc.Tab(
+                        tab_id='opt-reg-tab',
+                        label='Best subset',
+                        children=html.Div(
+                            [
+                                html.Br(),
+                                html.Label(
+                                    children='Min. history to be included in analysis (securities with less will be excluded):',
+                                    style={'margin-bottom': '20px'},
+                                ),
+                                html.Div(
+                                    [
+                                        html.Br(),
+                                        daq.Slider(
+                                            id='best-subset-slider',
+                                            min=1,
+                                            max=df[index_ticker].count(), 
+                                            step=1, 
+                                            value=df[index_ticker].count(), 
+                                            handleLabel={'showCurrentValue': True, 'label': 'days'},
+                                        ),
+                                        # dcc.Checklist(
+                                        #     id='interpolate', 
+                                        #     options=[{'label':'Interpolate missing values', 'value':'interpolate'}],
+                                        #     inputStyle={'margin-right': '3px'},
+                                        # ),
+                                        html.Br(),
+                                        html.Button(
+                                            children='Find best subset', 
+                                            id='find-best-subset',
+                                            style={'font-size': '12px', 'height':'30px', 'margin-top':'10px'},
+                                        ),
+                                        html.Div(id='best-subset-out', style={'margin-top':'25px'})
+                                    ]
+                                )
+                            ]
+                        )
+                    ),
                 ]
             )
         ],[]]
@@ -293,16 +334,16 @@ def disable_analysis(values, n_clicks, start_date, end_date):
             children = 'More than 10 components selected. Please remove components to proceed.'
             return [True, children]
     elif context == 'date-picker-range':
-    	children = ''
-    	return [False, children]
+        children = ''
+        return [False, children]
     else:
         children = ''
         return [True, children]
 
 @app.callback(
-	[
-    	Output('indicator-graphic', 'figure'),
-    	Output('scatter-uni-header','children'),
+    [
+        Output('indicator-graphic', 'figure'),
+        Output('scatter-uni-header','children'),
     ],
     [
         Input('xaxis-column', 'value'),
@@ -323,7 +364,6 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
     # Get data for index and selected components
     index_ticker = data.get_index_ticker('{0}'.format(index_name))
     df = data.get_prices()
-    # df = data.get_prices(start_date, end_date, index_name)
 
     # Filter on tickers
     print('Filtering for tickers...')
@@ -342,7 +382,7 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
     df = (df / df.shift(1)) - 1
 
     fig_uni_scatter = px.scatter(
-    	x=df[xaxis_column_name],
+        x=df[xaxis_column_name],
         y=df[index_ticker],
         trendline='ols',
         hover_name=df.index,
@@ -355,83 +395,146 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
     results = px.get_trendline_results(fig_uni_scatter)
 
     rsquared_uni_str = 'Regression eq.: Y = {0:.2f} + {1:.2f}X'.format(
-    	results.iloc[0]["px_fit_results"].params[0],
-    	results.iloc[0]["px_fit_results"].params[1])
+        results.iloc[0]["px_fit_results"].params[0],
+        results.iloc[0]["px_fit_results"].params[1])
 
     rsquared_uni_text = '{0} on its own explains {1:.0f}% of the variance in {2} ({3}).'.format(
         xaxis_column_name,
         results.iloc[0]["px_fit_results"].rsquared*100, 
         index_ticker, 
-        index_name)												
+        index_name)                                             
 
     fig_uni_scatter.update_layout(
-    	title={
-    		'text': rsquared_uni_str,
-    		'y':0.95,
-        	'x':0.5,
-    		'xanchor': 'center',
-    		'yanchor': 'top',
-    	},
+        title={
+            'text': rsquared_uni_str,
+            'y':0.95,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+        },
     )
 
     return [fig_uni_scatter, rsquared_uni_text]
 
 @app.callback(
+    Output('best-subset-out', 'children'),
+    [
+        Input('find-best-subset', 'n_clicks'),
+        Input('best-subset-slider', 'value'),
+    ],
+    [
+        State('index-selected', 'value'),
+        State('date-picker-range', 'start_date'),
+        State('date-picker-range', 'end_date'),
+    ]
+)
+def find_best_subset(n_clicks, num_days, index_name, start_date, end_date):
+    if n_clicks is None: 
+        PreventUpdate
+    else:
+        context = ctx.triggered[0]['prop_id'].split('.')[0]
+        if context == 'best-subset-slider':
+            return []
+        else:
+            # Get data for index and index components
+            tickers = data.get_index_tickers(index_name)
+            index_ticker = data.get_index_ticker('{0}'.format(index_name))
+            df = data.get_prices()
+
+            # Filter on tickers
+            print('Filtering for tickers...')
+            st = time.time()
+            df = df[tickers]
+            et = time.time()
+            print('Time to filter for tickers: {}'.format(et-st))
+
+            # Filter on selected dates
+            print('Filtering for selected dates...')
+            st = time.time()
+            df = df[(df.index >= dt.strptime(start_date, '%Y-%m-%d')) & (df.index <= dt.strptime(end_date, '%Y-%m-%d'))]
+            et = time.time()
+            print('Time to filter for selected dates: {}'.format(et-st))
+
+            # Compute returns
+            df = (df / df.shift(1)) - 1
+
+            # Filter for securities with desired history
+            df = df.loc[:, df.count() >= num_days]
+
+            # Run LARS to find best subset
+            X_cols = [t for t in tickers if t in df.columns and t != index_ticker]
+            X = df.dropna()[X_cols].values
+            y = df.dropna()[index_ticker].values
+            mod = linear_model.Lars(n_nonzero_coefs=10, normalize=False)
+            res = mod.fit(X, y)
+            best_subset = [X_cols[i] for i in res.active_]
+            best_subset_coef = [round(res.coef_[i], 4) for i in res.active_]
+
+            # Store regression results in DataTable
+            res_df = pd.DataFrame({'Component':best_subset, 'Estimated Coefficient':best_subset_coef})
+            res_dt = dash_table.DataTable(
+                data=res_df.to_dict('records'),
+                style_cell={'textAlign': 'center'},
+                style_data={ 'border': '1px solid black'},
+                style_header={ 'border': '1px solid black'},                    
+            )
+
+            return [
+                html.P(
+                    'Of the {0} (out of {1}) {2} components with at least {3} days of price history the following are the 10 that best explain {4} returns:'.format(
+                        len(X_cols),
+                        len(tickers)-1,
+                        index_name,
+                        num_days,
+                        index_ticker)                                             
+                ),
+                res_dt
+            ]
+
+@app.callback(
+    Output('find-best-subset', 'disabled'),
+    [
+        Input('find-best-subset', 'n_clicks'),
+        Input('best-subset-slider', 'value'),
+    ],
+)
+def disable_button_on_click(n_clicks, _):
+    context = ctx.triggered[0]['prop_id'].split('.')[0]
+    if context == 'find-best-subset':
+        if n_clicks > 0:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+@app.callback(
     [
         Output('corr-output-container', 'children'),
         Output('corr-output-container', 'hidden'),
-        Output('job-id', 'value'),
+        # Output('job-id', 'value'),
     ],
     [
         Input('get-pairs', 'n_clicks'),
-        Input('waiting', 'n_intervals'),
+        # Input('waiting', 'n_intervals'),
         Input('trade-date-picker', 'start_date'),
         Input('trade-date-picker', 'end_date'),
         Input('corr-selected', 'value'),
     ],
-    State('job-id', 'value'),
+    # State('job-id', 'value'),
 )
-def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
+# def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
+def find_pairs(n_clicks, start_date, end_date, corr_meth):
     if n_clicks:
         context = ctx.triggered[0]['prop_id'].split('.')[0]
         if context == 'get-pairs':
-            #pairs = data.get_most_correlated(start_date, end_date, corr_meth)
-            job = q.enqueue_call(func=get_most_correlated, args=(start_date, end_date, corr_meth,))
-            print('Queued job {}'.format(job.get_id()))
-            #pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
-            return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
-            # return [
-            #     html.B(
-            #         id='pairs-table-title',
-            #         children='Select pairs (rows) from the table below to include in the strategy backtest:',
-            #     ),
-            #     html.Div([
-            #         dash_table.DataTable(
-            #             id='pairs-table',
-            #             columns=[
-            #                 {'name': 'Ticker 1', 'id': 'ticker1'},
-            #                 {'name': 'Ticker 2', 'id': 'ticker2'},
-            #                 {'name': 'Corr. Coeff.', 'id': 'corr'},
-            #             ],
-            #             data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
-            #             style_cell={'textAlign': 'center'},
-            #             style_data={ 'border': '1px solid black'},
-            #             style_header={ 'border': '1px solid black'},                    
-            #             row_selectable='multi',
-            #             row_deletable=True,
-            #             selected_rows=[],
-            #             page_current= 0,
-            #             page_size= 10,
-            #         )],
-            #         style={'margin-top':'20px'}
-            #     )
-            # ]
-        elif context == 'waiting':
-            job = Job.fetch(job_id, connection=conn)
-            if job.is_finished:
-                pairs = job.result
-                pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
-                return [[
+            pairs = data.get_most_correlated(start_date, end_date, corr_meth)
+            pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
+            # job = q.enqueue_call(func=get_most_correlated, args=(start_date, end_date, corr_meth,))
+            # print('Queued job {}'.format(job.get_id()))
+            # return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
+            return [
+                [
                     html.B(
                         id='pairs-table-title',
                         children='Select pairs (rows) from the table below to include in the strategy backtest:',
@@ -455,20 +558,54 @@ def find_pairs(n_clicks, n_intervals, start_date, end_date, corr_meth, job_id):
                             page_size= 10,
                         )],
                         style={'margin-top':'20px'}
-                    ),
-                ], False, '']
-            else:
-                return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
-    return [[],False, '']
+                    )
+                ], 
+                False,
+            ]
+    return [[], True]
+    #     elif context == 'waiting':
+    #         job = Job.fetch(job_id, connection=conn)
+    #         if job.is_finished:
+    #             pairs = job.result
+    #             pairs['corr'] = pairs['corr'].apply(lambda x: f'{x:.4f}')
+    #             return [[
+    #                 html.B(
+    #                     id='pairs-table-title',
+    #                     children='Select pairs (rows) from the table below to include in the strategy backtest:',
+    #                 ),
+    #                 html.Div([
+    #                     dash_table.DataTable(
+    #                         id='pairs-table',
+    #                         columns=[
+    #                             {'name': 'Ticker 1', 'id': 'ticker1'},
+    #                             {'name': 'Ticker 2', 'id': 'ticker2'},
+    #                             {'name': 'Corr. Coeff.', 'id': 'corr'},
+    #                         ],
+    #                         data=pairs[['ticker1','ticker2','corr']].to_dict('records'),
+    #                         style_cell={'textAlign': 'center'},
+    #                         style_data={ 'border': '1px solid black'},
+    #                         style_header={ 'border': '1px solid black'},                    
+    #                         row_selectable='multi',
+    #                         row_deletable=True,
+    #                         selected_rows=[],
+    #                         page_current= 0,
+    #                         page_size= 10,
+    #                     )],
+    #                     style={'margin-top':'20px'}
+    #                 ),
+    #             ], False, '']
+    #         else:
+    #             return [dbc.Spinner(spinnerClassName='spinner', fullscreen=True), False, job.get_id()]
+    # return [[],False, '']
 
-@app.callback(
-    Output('waiting', 'disabled'),
-    Input('job-id', 'value'),
-)
-def disable_interval(job_id):
-    if job_id == '':
-        return True
-    return False
+# @app.callback(
+#     Output('waiting', 'disabled'),
+#     Input('job-id', 'value'),
+# )
+# def disable_interval(job_id):
+#     if job_id == '':
+#         return True
+#     return False
 
 @app.callback(
     Output('get-pairs', 'disabled'),

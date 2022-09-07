@@ -159,7 +159,7 @@ def get_verb_for_tickers(tickers, verb):
         if len(tickers) == 0:
             return ' ' + verb
         elif len(tickers) == 1:
-            return str(tickers[0]) + ' ' + verb + 's'
+            return str(tickers[0]) + ' ' + verb + ('s' if len(verb) > 0 else '')
         elif len(tickers) == 2:
             return str(tickers[0]) + ' and ' + str(tickers[1]) + ' ' + verb
         else:
@@ -184,17 +184,50 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     # Compute pairwise correlations
     print('Computing correlations...')
     st = time.time()
-    corrm = df.corr(method=corr_meth)
+
+    # Old approach
+    # corrm = df.corr(method=corr_meth)
+
+    # De-mean returns
+    mean_centered = df.values - np.nanmean(df.values, axis=0)
+    mean_centered = np.nan_to_num(mean_centered)
+
+    # Compute covariance numerator
+    covs = np.dot(mean_centered.T, mean_centered)
+
+    # Compute covariance divisor
+    is_not_nan = 1. * ~np.isnan(df.values)
+    divs = np.dot(is_not_nan.T, is_not_nan)
+
+    # Compute covariance
+    covs = np.divide(covs, divs)
+
+    # Compute variance
+    expects = np.divide(np.dot(np.nan_to_num(df.values).T, is_not_nan), divs)
+    expects_squared = np.divide(np.dot(
+            np.power(np.nan_to_num(df.values), 2.0).T, is_not_nan), divs)
+    variances = np.divide((expects_squared.T - np.power(expects.T, 2.0)) * divs.T, (divs.T - 1))
+
+    # Compute standard deviation
+    stds = np.sqrt(variances)
+
+    # Compute correlation
+    corrs = np.divide(np.divide(covs, stds.T), stds)
+    corrm = pd.DataFrame(corrs, index=df.columns, columns=df.columns)
+
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
     print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))
 
     # Find n largest pairwise correlations
     print('Finding largest pairwise correlations...')
+    st = time.time()
     mask = np.ones(corrm.shape, dtype='bool')
     mask[np.triu_indices(len(corrm))] = False
     corrm = corrm.mask(~mask, 0)
     pairs = corrm.stack().sort_values(ascending=False)[:n].index
+    et = time.time()
+    print('Took {} seconds to find largest pairwise correlations.'.format(et - st))
 
     # Format DataFrame with results
     print('Formatting results...')

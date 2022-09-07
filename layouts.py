@@ -70,24 +70,27 @@ tradeMenu = html.Div(
 			], 
 		),
 		html.Br(),
-		#dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
-		html.Div(
-			id='corr-output-container', 
-			children=[
-                html.B(
-                    id='pairs-table-title'
-                ),
-                html.Div([
-                    dash_table.DataTable(
-                        id='pairs-table',
-                ),
-            	]),
-            ],
-			hidden=True,
+		# dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
+		dbc.Spinner(
+			html.Div(
+				id='corr-output-container', 
+				children=[
+	                html.B(
+	                    id='pairs-table-title'
+	                ),
+	                html.Div([
+	                    dash_table.DataTable(
+	                        id='pairs-table',
+	                ),
+	            	]),
+	            ],
+				hidden=True,
+			),
+			spinnerClassName='spinner'
 		),
-		dcc.Interval(id='waiting'),
-		html.Div(id='job-id'),
-		#html.Div(id='corr-output-container-2'),
+		# dcc.Interval(id='waiting'),
+		# html.Div(id='job-id'),
+		# html.Div(id='corr-output-container-2'),
 		html.Br(),
 		html.Div(id='backtest-container'),
 	]
