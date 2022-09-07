@@ -8,7 +8,7 @@ from layouts import regMenu, tradeMenu
 import callbacks
 
 # Import app
-from app import app, q, Job, conn
+from app import app#, q, Job, conn
 # Import server for deployment
 from app import server
 
