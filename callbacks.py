@@ -16,7 +16,7 @@ from sklearn import linear_model
 import config
 
 # Import app
-from app import app, q, Job, conn
+from app import app#, q, Job, conn
 
 # Import data
 import data 
