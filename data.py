@@ -38,7 +38,7 @@ def get_prices():
         query='SELECT date,ticker,price FROM prices', 
         db_url=config.DB_URL, 
         index_col='date', 
-        parse_dates=True, 
+        #parse_dates=True, 
         dtype={'ticker': 'str', 'price': 'float'}, 
         engine='pyarrow'
     )
