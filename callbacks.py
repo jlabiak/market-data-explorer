@@ -9,14 +9,14 @@ import statsmodels.api as sm
 from datetime import datetime as dt, date
 import numpy as np
 import time
-from data import get_most_correlated
+from data import get_most_correlated, get_prices
 from sklearn import linear_model
 
 # Import config
 import config
 
 # Import app
-from app import app#, q, Job, conn
+from app import app, q, Job, conn
 
 # Import data
 import data 
@@ -89,7 +89,10 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
     if context == 'analyse-tickers':
         # Get data for index and selected components
         index_ticker = data.get_index_ticker('{0}'.format(index_name))
-        df = data.get_prices()
+        #df = data.get_prices()
+        job = q.enqueue_call(func=get_prices)
+        print('Queued job {}'.format(job.get_id()))
+        return [[],[]]
 
         # Filter on tickers
         print('Filtering for tickers...')

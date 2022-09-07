@@ -2,9 +2,9 @@ from dash import Dash
 import dash_bootstrap_components as dbc
 from flask_caching import Cache
 
-# from rq import Queue
-# from rq.job import Job
-# from worker import conn
+from rq import Queue
+from rq.job import Job
+from worker import conn
 
 app = Dash(__name__, 
            external_stylesheets=[dbc.themes.SANDSTONE],
@@ -20,7 +20,7 @@ cache = Cache(app.server, config={
 # })
 TIMEOUT = 0 # 60*60*24
 
-# q = Queue(connection=conn)
+q = Queue(connection=conn)
 
 # Set app server to variable for deployment
 server = app.server

@@ -27,11 +27,10 @@ def read_sql_tmpfile(query, db_url, **kwargs):
 def get_prices():
     print('Loading price data...')
     st = time.time()
-    # chunks = pd.read_sql_table('prices', config.DB_URL, chunksize=100000)
+    # chunks = pd.read_sql_table('prices', config.DB_URL, chunksize=1000000)
     # dfs = []
     # for c in chunks:
     #     dfs.append(c)
-    #     print('chunk size {}MB'.format(sys.getsizeof(c) / 1e6))
     # df = pd.concat(dfs)
     # df['date'] = pd.to_datetime(df['date'])
     df = read_sql_tmpfile(
