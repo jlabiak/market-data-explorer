@@ -18,7 +18,7 @@ cache = Cache(app.server, config={
 #     'CACHE_TYPE': 'redis',
 #     'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
 # })
-TIMEOUT = 60*60*24
+TIMEOUT = 0 # 60*60*24
 
 q = Queue(connection=conn)
 
