@@ -13,7 +13,7 @@ sched = BlockingScheduler()
 def scheduled_job():
     print('Running scheduled job...')
     df = get_prices_from_db()
-    #df = df[df.index > '2012-01-01']
+    df = df[df.index > '2011-01-01']
     compressed_df = zlib.compress(pickle.dumps(df))
     print('Setting df of size {}'.format(sys.getsizeof(compressed_df) / 1e6))
     r.set('prices', compressed_df)
