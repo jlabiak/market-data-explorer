@@ -9,7 +9,7 @@ import statsmodels.api as sm
 from datetime import datetime as dt, date
 import numpy as np
 import time
-from data import get_most_correlated, get_prices
+# from data import get_most_correlated, get_prices
 from sklearn import linear_model
 
 # Import config
@@ -89,7 +89,7 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
     if context == 'analyse-tickers':
         # Get data for index and selected components
         index_ticker = data.get_index_ticker('{0}'.format(index_name))
-        df = data.get_prices()
+        df = data.get_prices_from_cache()
 
         # Filter on tickers
         print('Filtering for tickers...')
@@ -363,7 +363,7 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
 
     # Get data for index and selected components
     index_ticker = data.get_index_ticker('{0}'.format(index_name))
-    df = data.get_prices()
+    df = data.get_prices_from_cache()
 
     # Filter on tickers
     print('Filtering for tickers...')
@@ -439,7 +439,7 @@ def find_best_subset(n_clicks, num_days, index_name, start_date, end_date):
             # Get data for index and index components
             tickers = data.get_index_tickers(index_name)
             index_ticker = data.get_index_ticker('{0}'.format(index_name))
-            df = data.get_prices()
+            df = data.get_prices_from_cache()
 
             # Filter on tickers
             print('Filtering for tickers...')
@@ -797,7 +797,7 @@ def run_backtest(n_clicks, trade_size, entry_thres, exit_type, exit_thres, selec
     if n_clicks:
         # Get prices data
         st = time.time()
-        prices = data.get_prices()
+        prices = data.get_prices_from_cache()
         et = time.time()
         print('Took {} seconds to load prices data for backtest.'.format(et - st))
 
