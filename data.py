@@ -6,8 +6,10 @@ from datetime import datetime as dt
 import time
 import sys
 import tempfile
+import pickle
+import zlib
 
-from app import cache, TIMEOUT
+from app import cache, TIMEOUT, r
 
 def read_sql_tmpfile(query, db_url, **kwargs):
     with tempfile.TemporaryFile() as tmpfile:
@@ -23,8 +25,7 @@ def read_sql_tmpfile(query, db_url, **kwargs):
         df = pd.read_csv(tmpfile, **kwargs)
         return df
 
-@cache.memoize(timeout=TIMEOUT)
-def get_prices():
+def get_prices_from_db():
     print('Loading price data...')
     st = time.time()
     # chunks = pd.read_sql_table('prices', config.DB_URL, chunksize=1000000)
@@ -55,6 +56,11 @@ def get_prices():
     et = time.time()
     print('Time to pivot df: {}'.format(et-st))
 
+    return df
+
+def get_prices_from_cache():
+    print('Getting prices from cache...')
+    df=pickle.loads(zlib.decompress(r.get('prices')))
     return df
 
 # @cache.memoize(timeout=TIMEOUT)
@@ -167,7 +173,7 @@ def get_verb_for_tickers(tickers, verb):
 def get_most_correlated(start_date, end_date, corr_meth, n=50):
     # Get data
     st = time.time()
-    df = get_prices()
+    df = get_prices_from_cache()
     et = time.time()
     print('Took {} seconds to load df.'.format(et - st))
 
