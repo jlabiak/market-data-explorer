@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 from flask_caching import Cache
 import os
 import redis
+from urllib.parse import urlparse
 
 # from rq import Queue
 # from rq.job import Job
@@ -23,8 +24,8 @@ cache = Cache(app.server, config={
 TIMEOUT = 0 # 60*60*24
 
 # q = Queue(connection=conn)
-redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
-r = redis.from_url(redis_url)
+redis_url = urlparse(os.getenv('REDIS_URL', 'redis://localhost:6379'))
+r = redis.Redis(host=redis_url.hostname, port=redis_url.port, username=redis_url.username, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
 
 # Set app server to variable for deployment
 server = app.server
