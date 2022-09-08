@@ -47,7 +47,7 @@ def get_prices():
         df.index.max().date().strftime('%Y-%m-%d')))
     et = time.time()
     print('Time to load price data: {}'.format(et-st))
-    df = df.head(1000)
+
     # Pivot dataframe
     print('Pivoting df...')
     st = time.time()
