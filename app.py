@@ -1,7 +1,8 @@
 from dash import Dash
 import dash_bootstrap_components as dbc
 from flask_caching import Cache
-import os
+# import os
+import redis
 
 # from rq import Queue
 # from rq.job import Job
@@ -11,17 +12,19 @@ app = Dash(__name__,
            external_stylesheets=[dbc.themes.SANDSTONE],
            meta_tags=[{'name': 'viewport', 'content': 'width=device-width, initial-scale=1'},],)
 
-# cache = Cache(app.server, config={
-#     'CACHE_TYPE': 'filesystem',
-#     'CACHE_DIR': 'cache-directory'
-# })
 cache = Cache(app.server, config={
-    'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
+    'CACHE_TYPE': 'filesystem',
+    'CACHE_DIR': 'cache-directory'
 })
+# cache = Cache(app.server, config={
+#     'CACHE_TYPE': 'redis',
+#     'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
+# })
 TIMEOUT = 0 # 60*60*24
 
 # q = Queue(connection=conn)
+redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+r = redis.from_url(redis_url)
 
 # Set app server to variable for deployment
 server = app.server
