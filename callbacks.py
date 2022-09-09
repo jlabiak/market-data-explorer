@@ -301,7 +301,7 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
                                             id='find-best-subset',
                                             style={'font-size': '12px', 'height':'30px', 'margin-top':'10px'},
                                         ),
-                                        html.Div(id='best-subset-out', style={'margin-top':'25px'})
+                                        dbc.Spinner(html.Div(id='best-subset-out', style={'margin-top':'25px'}), spinnerClassName='spinner')
                                     ]
                                 )
                             ]
