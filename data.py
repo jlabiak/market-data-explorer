@@ -184,6 +184,7 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
     print('time to filter df: {}'.format(et-st))
 
     # Compute returns
+    df = df.replace(0, np.nan)
     df = (df / df.shift(1)) - 1
     
     # Compute pairwise correlations

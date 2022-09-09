@@ -106,6 +106,7 @@ def regress_and_display(n_clicks, tickers, start_date, end_date, index_name):
         print('Time to filter for selected dates: {}'.format(et-st))
 
         # Compute returns
+        df = df.replace(0, np.nan)
         df = (df / df.shift(1)) - 1
 
         # Run multivariate regression
@@ -379,6 +380,7 @@ def update_graph(xaxis_column_name, n_clicks, tickers,
     print('time to filter df: {}'.format(et-st))
 
     # Compute returns
+    df = df.replace(0, np.nan)
     df = (df / df.shift(1)) - 1
 
     fig_uni_scatter = px.scatter(
@@ -456,6 +458,7 @@ def find_best_subset(n_clicks, num_days, index_name, start_date, end_date):
             print('Time to filter for selected dates: {}'.format(et-st))
 
             # Compute returns
+            df = df.replace(0, np.nan)
             df = (df / df.shift(1)) - 1
 
             # Filter for securities with desired history
