@@ -34,7 +34,6 @@ regMenu = html.Div(
 		html.Div(id='regression-output-freshness', hidden=True),
 		dbc.Spinner(html.Div(id='regression-output-status'), spinnerClassName='spinner'),
 		html.Div(id='regression-output-container'),
-
 	]
 )
 
@@ -70,24 +69,26 @@ tradeMenu = html.Div(
 			], 
 		),
 		html.Br(),
-		# dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
-		dbc.Spinner(
-			html.Div(
-				id='corr-output-container', 
-				children=[
-	                html.B(
-	                    id='pairs-table-title'
-	                ),
-	                html.Div([
-	                    dash_table.DataTable(
-	                        id='pairs-table',
-	                ),
-	            	]),
-	            ],
-				hidden=True,
-			),
-			spinnerClassName='spinner'
-		),
+		dbc.Spinner(html.Div(id='corr-output-container'), spinnerClassName='spinner'),
+		# dbc.Spinner(
+		# 	html.Div(
+		# 		children=[
+	 #                html.B(
+	 #                	children=[],
+	 #                    id='pairs-table-title'
+	 #                ),
+	 #                html.Div([
+	 #                    dash_table.DataTable(
+	 #                    	children=[],
+	 #                        id='pairs-table',
+	 #                ),
+	 #            	]),
+	 #            ],
+		# 		hidden=True,
+		# 		id='corr-output-container',
+		# 	),
+		# 	spinnerClassName='spinner'
+		# ),
 		# dcc.Interval(id='waiting'),
 		# html.Div(id='job-id'),
 		# html.Div(id='corr-output-container-2'),

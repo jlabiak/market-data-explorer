@@ -565,7 +565,10 @@ def find_pairs(n_clicks, start_date, end_date, corr_meth):
                 ], 
                 False,
             ]
-    return [[], True]
+    return [
+        [],
+        True
+    ]
     #     elif context == 'waiting':
     #         job = Job.fetch(job_id, connection=conn)
     #         if job.is_finished:
@@ -637,6 +640,7 @@ def disable_button_on_click(n_clicks, start, end, corr_meth):
         Input('trade-date-picker', 'end_date'),
         Input('corr-selected', 'value'),
     ],
+    prevent_initial_call=True
 )
 def get_backtest_params(pairs, start, end, corr_meth):
     context = ctx.triggered[0]['prop_id'].split('.')[0]
