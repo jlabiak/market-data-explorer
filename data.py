@@ -219,28 +219,39 @@ def get_most_correlated(start_date, end_date, corr_meth, n=50):
 
     # Compute correlation
     corrs = np.divide(np.divide(covs, stds.T), stds)
-    corrm = pd.DataFrame(corrs, index=df.columns, columns=df.columns)
+    
+    # Zero elements along and below diagonal
+    corrs = np.triu(corrs, 1)
+
+    # Format as DataFrame
+    # corrm = pd.DataFrame(corrs, index=df.columns, columns=df.columns)
 
     et = time.time()
     print('Took {} seconds to compute correlations.'.format(et - st))
-    print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))
+    # print('Size of corrm: {}MB'.format(sys.getsizeof(corrm) / 1e6))
 
     # Find n largest pairwise correlations
     print('Finding largest pairwise correlations...')
     st = time.time()
-    mask = np.ones(corrm.shape, dtype='bool')
-    mask[np.triu_indices(len(corrm))] = False
-    corrm = corrm.mask(~mask, 0)
-    pairs = corrm.stack().sort_values(ascending=False)[:n].index
+    # mask = np.ones(corrm.shape, dtype='bool')
+    # mask[np.triu_indices(len(corrm))] = False
+    # corrm = corrm.mask(~mask, 0)
+    # pairs = corrm.stack().sort_values(ascending=False)[:n].index
+    corrs_flat = np.ravel(corrs)
+    inds = corrs_flat.argsort()[-n:][::-1]
     et = time.time()
     print('Took {} seconds to find largest pairwise correlations.'.format(et - st))
 
     # Format DataFrame with results
     print('Formatting results...')
-    pairs = pd.DataFrame(pairs, columns=['pair'])
-    pairs['corr'] = pairs['pair'].apply(lambda x: round(corrm.loc[x],4))
-    pairs['ticker1'] = pairs['pair'].apply(lambda x: x[0])
-    pairs['ticker2'] = pairs['pair'].apply(lambda x: x[1])
+    pairs = pd.DataFrame()
+    pairs['ticker1'] = df.columns[inds // len(df.columns)]
+    pairs['ticker2'] = df.columns[inds % len(df.columns)]
+    pairs['corr'] = corrs_flat[inds]
+    # pairs = pd.DataFrame(pairs, columns=['pair'])
+    # pairs['corr'] = pairs['pair'].apply(lambda x: round(corrm.loc[x],4))
+    # pairs['ticker1'] = pairs['pair'].apply(lambda x: x[0])
+    # pairs['ticker2'] = pairs['pair'].apply(lambda x: x[1])
 
     return pairs
 
