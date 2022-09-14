@@ -24,9 +24,9 @@ cache = Cache(app.server, config={
 TIMEOUT = 60*60*24
 
 # q = Queue(connection=conn)
-# redis_url = urlparse(os.getenv('REDIS_URL', 'redis://localhost:6379'))
-# r = redis.Redis(host=redis_url.hostname, port=redis_url.port, username=redis_url.username, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
-r = redis.from_url('redis://localhost:6379')
+redis_url = urlparse(os.getenv('REDIS_URL', 'redis://localhost:6379'))
+r = redis.Redis(host=redis_url.hostname, port=redis_url.port, username=redis_url.username, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
+# r = redis.from_url('redis://localhost:6379')
 
 # Set app server to variable for deployment
 server = app.server
